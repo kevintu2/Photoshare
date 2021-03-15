@@ -1,0 +1,24 @@
+{% if photos %}
+<h2>Here are all photos</h2>
+    <ul>
+    {% for photo in photos %}
+
+        <li>{{photo[2]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if albums %}
+<h2>Here are {{album_name}}'s Photos</h2>
+    <u1>
+        {% for photo in albums %}
+        <li>{{photo[2]}}<br>
+            <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        {% endfor %}
+
+
+    </u1>
+{% endif %}
+
+<li><a href='/'>Home</a></li>

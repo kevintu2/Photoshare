@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '130Barnes'
+app.config['MYSQL_DATABASE_PASSWORD'] = '5Xbmep7olqrLuc!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -227,7 +227,7 @@ def isEmailUnique(email):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersPhotos(getUserIdFromEmail(flask_login.current_user.id)),base64=base64, albums=getUserAlbums(getUserIdFromEmail(flask_login.current_user.id)))
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -235,19 +235,37 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+def albumBelongToUser(user_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name FROM Albums WHERE Albums.user_id = '{0}'".format(user_id))
+	return cursor.fetchall()
+
+def findAlbumId(name):
+	cursor = conn.cursor()
+	cursor.execute("SELECT albums_id FROM Albums WHERE Albums.name = '{0}'".format(name))
+	return cursor.fetchone()[0]
+
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_file():
 	if request.method == 'POST':
+		try:
+			albums_name = request.form.get('albumname')
+		except:
+			print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
+			return flask.redirect(flask.url_for('album'))
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
 		caption = request.form.get('caption')
-		albums_id = request.form.get('album')
 		data =imgfile.read()
-		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Photos (data, user_id, albums_id, caption) VALUES (%s, %s, %s )''' ,(data,user_id, caption))
-		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(user_id),base64=base64)
+		if((albums_name,) in albumBelongToUser(user_id)):
+			albums_id = findAlbumId(albums_name)
+			cursor = conn.cursor()
+			cursor.execute('''INSERT INTO Photos (caption, data, albums_id, user_id) VALUES (%s, %s, %s, %s)''',(caption, data, int(albums_id), int(user_id)))
+			conn.commit()
+			return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(user_id),base64=base64)
+		else:
+			return render_template('hello.html', message='The Album you have selected is not valid')
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
 		return render_template('upload.html')
@@ -281,6 +299,51 @@ def hello():
 @app.route("/error", methods=['GET'])
 def error():
 	return render_template('error.html', message='ERROR')
+
+def getPhotos():
+	cursor = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos")
+	return cursor.fetchall()
+
+@app.route('/browse', methods=['GET'])
+def browsePhotos():
+	photo_list =  getPhotos()
+	return render_template('browse.html', photos=photo_list,base64=base64) 
+
+@app.route('/browse/<albums_id>', methods=['GET'])
+def showAlbumPhotos(albums_id):
+	nameOfAlbum = getAlbumName(albums_id)
+	photo_list = getPhotosInAlbum(albums_id)
+	return render_template('browse.html', albums = photo_list, album_name=nameOfAlbum, base64=base64)
+
+
+def getAlbums():
+	cursor = conn.cursor()
+	cursor.execute("SELECT albums_id, name, email FROM Albums, Users WHERE Albums.user_id = Users.user_id")
+	return cursor.fetchall()
+
+def getUserAlbums(user_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT albums_id, name FROM Albums WHERE Albums.user_id = '{0}'".format(user_id))
+	return cursor.fetchall()
+
+def getAlbumName(album_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name FROM Albums WHERE Albums.albums_id = '{0}'".format(album_id))
+	return cursor.fetchone()[0]
+
+def getPhotosInAlbum(album_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE Photos.albums_id = '{0}'".format(album_id))
+	return cursor.fetchall()
+
+@app.route('/browsealbum', methods=['GET'])
+def browseAlbum():
+	listAlbum = getAlbums()
+	return render_template('browsealbum.html', albums=listAlbum)
+
+
+
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
 	#$ python app.py

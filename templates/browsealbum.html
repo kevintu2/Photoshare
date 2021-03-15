@@ -1,0 +1,10 @@
+{% if albums %}
+<h2>Here are all Albums</h2>
+    <ul>
+    {% for album in albums %}
+        <li><a href="/browse/{{album[0]}}"> Album Name: {{album[1]}}</a> </br> Author email is: {{album[2]}}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<li><a href='/'>Home</a></li>
