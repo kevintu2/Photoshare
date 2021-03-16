@@ -176,11 +176,16 @@ def searchBy():
 	resultList = []
 	photo_id_by_tags = []
 	for x in tag_list:
-		tuplephotolist = getAllPhotosByTag(getTagId(x))
+		try:
+			tuplephotolist = getAllPhotosByTag(getTagId(x))
+			print('SUCESS')
+		except:
+			return render_template('searchTags.html', message='The Tag does not Exist')
 		photo_id_per_tag = []
 		for i in range(len(tuplephotolist)):
 			photo_id_per_tag.append(tuplephotolist[i][1])
 		photo_id_by_tags.append(photo_id_per_tag)
+	
 	first_tag_photos = photo_id_by_tags[0]
 	rest_tag_photos = photo_id_by_tags[1:len(photo_id_by_tags)]
 	for i in first_tag_photos:
@@ -498,7 +503,6 @@ def viewAllTags():
 def showAllByTag(tag_id):
 	nameOfTag = getTagName(tag_id)
 	photo_list = getAllPhotosByTag(tag_id)
-	print(photo_list)
 	return render_template('allTagPhoto.html', photos = photo_list, base64=base64, tag_name=nameOfTag)
 
 @app.route('/popularTags', methods = ['GET'])
@@ -514,6 +518,45 @@ def viewTopTags():
 def getTopTags():
 	cursor.execute("SELECT tag_id FROM Tagged AS T, Photos AS P WHERE T.photo_id = P.photo_id GROUP BY T.tag_id order by count(P.photo_id) desc limit 3")
 	return cursor.fetchall()
+
+def getOwner(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Photos WHERE photo_id = '{0}'".format(photo_id))
+	return cursor.fetchone()[0]
+
+@app.route('/commentPhoto', methods = ['POST'])
+def commentPhoto():
+	try:
+		comment = request.form.get('comment')
+		print(comment)
+		photo_id = request.args.get('pid')
+		print(photo_id)
+	
+	except:
+		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
+		return flask.redirect(flask.url_for('hello'))
+	photo_owner = getOwner(photo_id)
+	print(photo_owner)
+	comment_date = date.today()
+	try:
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+	except:
+		user_id = None
+	if photo_owner == user_id:
+		return render_template('hello.html', message = 'You cannot comment on your own photo!')
+	else:
+		if(user_id == None):
+		
+			cursor = conn.cursor()
+			cursor.execute("INSERT INTO Comments (photo_id, text, date) VALUES('{0}', '{1}', '{2}')".format(photo_id, comment, comment_date))
+			conn.commit()
+			return render_template('hello.html', message = 'Comment Posted!')
+		else:
+			cursor = conn.cursor()
+			cursor.execute("INSERT INTO Comments (user_id, photo_id, text, date) VALUES('{0}', '{1}', '{2}', '{3}')".format(user_id, photo_id, comment, comment_date))
+			conn.commit()
+			return render_template('hello.html', message = 'Comment Posted!')
+
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
 	#$ python app.py

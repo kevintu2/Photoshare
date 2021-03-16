@@ -34,6 +34,7 @@
          </form>
         
         </li>
+        <li><a href='/viewComments'>View Comments</a></li>
     {% endfor %}
     </ul>
 {% endif %}
@@ -46,6 +47,7 @@
         <form method = "post" action = "{{url_for('removeAlbum', aid = album[0])}}">
          <input type = "submit" name = "Delete" value = "Delete It">
         </li>
+        
       {% endfor %}
     </u1>
 {% endif %}
