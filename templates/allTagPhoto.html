@@ -7,4 +7,17 @@
         {% endfor %}
     </u1>
 {% endif %}
+
+{% if tagList %}
+<h2>Here are Photos Tagged with {{tag_name}}</h2>
+    <u1>
+        {% for tag in tagList %}
+        <li>{{tag[0]}}<br>
+            <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        {% endfor %}
+    </u1>
+{% endif %}
+
+
+
 <li><a href='/'>Home</a></li>

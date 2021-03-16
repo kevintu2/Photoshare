@@ -1,0 +1,11 @@
+{% if tags %}
+<h2>The Top 3 Tags</h2>
+    <ul>
+    {% for tag in tags %}
+        <li><a href="/allTagPhoto/{{tag[0]}}"> Tag: {{tag[1]}}</a> </br> </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<li><a href='/'>Home</a></li>
+

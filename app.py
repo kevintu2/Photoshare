@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '5Xbmep7olqrLuc!'
+app.config['MYSQL_DATABASE_PASSWORD'] = '130Barnes'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -420,7 +420,7 @@ def viewMyTags():
 
 def getAllPhotosByTag(tag_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT photo_id FROM Tagged WHERE tag_id = '{0}'".format(tag_id))
+	cursor.execute("SELECT data, photo_id, caption FROM Photos AS P WHERE P.photo_id IN (SELECT T.photo_id FROM Tagged as T WHERE T.tag_id = '{0}')".format(tag_id))
 	return cursor.fetchall()
 
 def getUserPhotosByTag(tag_id, user_id):
@@ -433,10 +433,32 @@ def getUserPhotosByTag(tag_id, user_id):
 def showByTag(tag_id):
 	nameOfTag = getTagName(tag_id)
 	photo_list = getUserPhotosByTag(tag_id, getUserIdFromEmail(flask_login.current_user.id))
+	return render_template('userTagPhoto.html', photos = photo_list, base64=base64, tag_name=nameOfTag)
+
+@app.route('/browseAllTags', methods = ['GET'])
+def viewAllTags():
+	return render_template('browseAllTags.html', tags = getAllTags())
+
+@app.route('/allTagPhoto/<tag_id>', methods=['GET'])
+def showAllByTag(tag_id):
+	nameOfTag = getTagName(tag_id)
+	photo_list = getAllPhotosByTag(tag_id)
 	print(photo_list)
-	return render_template('userTagPhoto.html', photos = photo_list, base64=base64, tag_name=getTagName(tag_id))
+	return render_template('allTagPhoto.html', photos = photo_list, base64=base64, tag_name=nameOfTag)
 
+@app.route('/popularTags', methods = ['GET'])
+def viewTopTags():
+	tag = getTopTags()
+	taglist = []
+	for x in tag:
+		temp = (x[0], getTagName(x[0]))
+		taglist.append(temp)
+	return render_template('popularTags.html', tags = taglist)
+	
 
+def getTopTags():
+	cursor.execute("SELECT tag_id FROM Tagged AS T, Photos AS P WHERE T.photo_id = P.photo_id GROUP BY T.tag_id order by count(P.photo_id) desc limit 3")
+	return cursor.fetchall()
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
 	#$ python app.py
