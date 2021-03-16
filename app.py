@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '130Barnes'
+app.config['MYSQL_DATABASE_PASSWORD'] = '5Xbmep7olqrLuc!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -404,6 +404,37 @@ def browseAlbum():
 	listAlbum = getAlbums()
 	return render_template('browsealbum.html', albums=listAlbum)
 
+def getAllTags():
+	cursor = conn.cursor()
+	cursor.execute("SELECT * FROM Tags")
+	return cursor.fetchall()
+
+def getTagName(tag_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name FROM Tags WHERE tag_id = '{0}'".format(tag_id))
+	return cursor.fetchone()[0]
+
+@app.route('/browseMyTags', methods=['GET'])
+def viewMyTags():
+	return render_template('browseMyTags.html',tags=getAllTags())
+
+def getAllPhotosByTag(tag_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT photo_id FROM Tagged WHERE tag_id = '{0}'".format(tag_id))
+	return cursor.fetchall()
+
+def getUserPhotosByTag(tag_id, user_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos AS P WHERE P.user_id = '{1}' AND P.photo_id IN (SELECT T.photo_id FROM Tagged as T WHERE T.tag_id = '{0}')".format(tag_id, user_id))
+	return cursor.fetchall()
+
+@app.route('/userTagPhoto/<tag_id>', methods=['GET'])
+@flask_login.login_required
+def showByTag(tag_id):
+	nameOfTag = getTagName(tag_id)
+	photo_list = getUserPhotosByTag(tag_id, getUserIdFromEmail(flask_login.current_user.id))
+	print(photo_list)
+	return render_template('userTagPhoto.html', photos = photo_list, base64=base64, tag_name=getTagName(tag_id))
 
 
 if __name__ == "__main__":
