@@ -161,6 +161,57 @@ def searchFriends():
 	print(userlist)
 	return render_template('search.html', name=flask_login.current_user.id, message='Search Result', result=userlist)
 
+@app.route('/searchTags', methods = ['POST'])
+
+def searchBy():
+	try:
+
+		tags = request.form.get('tags')
+		tag_list = tags.split(' ')
+
+	except:
+
+		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
+		return flask.redirect(flask.url_for('searchTags'))
+	resultList = []
+	photo_id_by_tags = []
+	for x in tag_list:
+		tuplephotolist = getAllPhotosByTag(getTagId(x))
+		photo_id_per_tag = []
+		for i in range(len(tuplephotolist)):
+			photo_id_per_tag.append(tuplephotolist[i][1])
+		photo_id_by_tags.append(photo_id_per_tag)
+	first_tag_photos = photo_id_by_tags[0]
+	rest_tag_photos = photo_id_by_tags[1:len(photo_id_by_tags)]
+	for i in first_tag_photos:
+		valid = True
+		for j in rest_tag_photos:
+			if(photoExistInList(i,j)):
+				continue
+			else:
+				valid = False
+				break
+		if(valid == True):
+			resultList.append(i)
+		else:
+			continue
+	photoList = []
+	for x in resultList:
+		cursor = conn.cursor()
+		cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE photo_id = '{0}'".format(x))
+		temp = cursor.fetchall()
+		photoList.append(temp[0])
+	print(photoList)
+	return render_template('searchTags.html', message = 'Search Result', result = photoList, base64=base64)
+
+
+def photoExistInList(photo_id, listOfPhotos):
+	if(photo_id in listOfPhotos):
+		return True
+	else:
+		return False
+	
+
 @app.route('/search', methods=['GET'])
 @flask_login.login_required
 def search():
@@ -244,6 +295,10 @@ def findAlbumId(name):
 	cursor = conn.cursor()
 	cursor.execute("SELECT albums_id FROM Albums WHERE Albums.name = '{0}'".format(name))
 	return cursor.fetchone()[0]
+
+@app.route('/searchTags' , methods = ['GET'])
+def searchtag():
+	return render_template('searchTags.html')
 
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
