@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '5Xbmep7olqrLuc!'
+app.config['MYSQL_DATABASE_PASSWORD'] = '130Barnes'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -251,6 +251,8 @@ def upload_file():
 	if request.method == 'POST':
 		try:
 			albums_name = request.form.get('albumname')
+			tags = request.form.get('tags')
+			tag_list = tags.split(' ')
 		except:
 			print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
 			return flask.redirect(flask.url_for('album'))
@@ -263,6 +265,18 @@ def upload_file():
 			cursor = conn.cursor()
 			cursor.execute('''INSERT INTO Photos (caption, data, albums_id, user_id) VALUES (%s, %s, %s, %s)''',(caption, data, int(albums_id), int(user_id)))
 			conn.commit()
+
+			pid = getPhotoId(caption, data, albums_id)
+			cursor = conn.cursor()
+			for x in range(len(tag_list)):
+				if tagNoExists(tag_list[x]):
+					cursor.execute("INSERT INTO Tags (name) VALUES ('{0}')".format(tag_list[x]))
+					cursor.execute("INSERT INTO Tagged (photo_id, tag_id) VALUES ('{0}', '{1}')".format(pid, getTagId(tag_list[x])))
+				
+				else: 
+					cursor.execute("INSERT INTO Tagged (photo_id, tag_id) VALUES ('{0}', '{1}')".format(pid, getTagId(tag_list[x])))
+			conn.commit()
+
 			return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(user_id),base64=base64)
 		else:
 			return render_template('hello.html', message='The Album you have selected is not valid')
@@ -270,6 +284,23 @@ def upload_file():
 	else:
 		return render_template('upload.html')
 #end photo uploading code
+
+def getTagId(name):
+	cursor = conn.cursor()
+	cursor.execute("SELECT tag_id FROM Tags WHERE name = '{0}'".format(name))
+	return cursor.fetchone()[0]
+
+def tagNoExists(name):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT name FROM Tags WHERE name = '{0}'".format(name)):
+		return False
+	else:
+		return True
+
+def getPhotoId(caption, data, albums_id):
+	cursor = conn.cursor()
+	cursor.execute("""SELECT photo_id FROM Photos WHERE caption = %s AND data = %s AND albums_id = %s""", (caption, data, int(albums_id)))
+	return cursor.fetchone()[0]
 
 @app.route('/album', methods = ['POST'])
 @flask_login.login_required
@@ -285,6 +316,37 @@ def createAlbum():
 	cursor.execute("INSERT INTO Albums (name, date, user_id) VALUES ('{0}', '{1}', '{2}')".format(name, current_date, current_user_id))
 	conn.commit()
 	return render_template('album.html', name = flask_login.current_user.id, message = 'Album Created!')
+
+@app.route('/removePhoto', methods = ['POST'])
+@flask_login.login_required
+def removePhoto():
+	try: 
+		photo_id = request.args.get('pid')
+	except:
+		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
+		return flask.redirect(flask.url_for('hello'))
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	print(photo_id)
+	cursor = conn.cursor()
+	cursor.execute("DELETE FROM Photos WHERE photo_id = '{0}'".format(photo_id))
+	conn.commit()
+	return render_template('hello.html', message = 'You have deleted the photo!')
+
+@app.route('/removeAlbum', methods = ['POST'])
+@flask_login.login_required
+def removeAlbum():
+	try: 
+		albums_id = request.args.get('aid')
+	except:
+		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
+		return flask.redirect(flask.url_for('hello'))
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	print(albums_id)
+	cursor = conn.cursor()
+	cursor.execute("DELETE FROM Albums WHERE albums_id = '{0}'".format(albums_id))
+	conn.commit()
+	return render_template('hello.html', message = 'You have deleted the album!')
+
 
 @app.route('/album')
 @flask_login.login_required
