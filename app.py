@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '130Barnes'
+app.config['MYSQL_DATABASE_PASSWORD'] = '5Xbmep7olqrLuc!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -556,6 +556,22 @@ def commentPhoto():
 			cursor.execute("INSERT INTO Comments (user_id, photo_id, text, date) VALUES('{0}', '{1}', '{2}', '{3}')".format(user_id, photo_id, comment, comment_date))
 			conn.commit()
 			return render_template('hello.html', message = 'Comment Posted!')
+
+@app.route('/viewComments/<photo_id>', methods = ['GET'])
+def viewComments(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT text, date, comment_id FROM Comments WHERE photo_id = '{0}'".format(photo_id))
+	commentList = cursor.fetchall()
+	return render_template('viewComments.html', message = 'Comments for the Post', commentList = commentList, photo = getPhotoById(photo_id), base64=base64)
+
+@app.route('/viewComments', methods = ['GET'])
+def view():
+	return render_template('viewComments.html', message = 'Comments for the Post')
+
+def getPhotoById(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE photo_id = '{0}'".format(photo_id))
+	return cursor.fetchall()
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run

@@ -1,0 +1,22 @@
+<h1>{{message}}</h1>
+{% if commentList %}
+    <u1>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0][0]).decode("ascii") }}'/></li>
+    </u1>
+    <u1>
+        {% for comment in commentList %}
+            <li>
+                <p>
+                    Comment: {{comment[0]}}<br>
+                    Date Posted: {{comment[1]}}<br>
+                </p>
+            </li>
+        {% endfor %}
+    </u1>
+{% endif %}
+
+
+
+
+
+<li><a href='/'>Home</a></li>
