@@ -1,0 +1,23 @@
+{% if message %}
+<h2>{{message}}</h2>
+{% endif %}
+
+{% if like_count %}
+<h3> There are {{like_count}} likes on this photo </h3>
+{% endif %}
+
+{% if userlist%}
+<ul>
+    {% for users in userlist%}
+        <li>{{users[1]}}
+    {% endfor %}
+</ul>
+{% endif %}
+    <ul>
+    {% for tag in tags %}
+        <li><a href="/allTagPhoto/{{tag[0]}}"> Tag: {{tag[1]}}</a> </br> </li>
+    {% endfor %}
+    </ul>
+
+
+<li><a href='/'>Home</a></li>

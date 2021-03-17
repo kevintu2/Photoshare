@@ -1,14 +1,18 @@
+{%if message%}
+<h4> {{message}} </h4>
+{%endif%}
+
 {% if photos %}
-<h2>Here are Photos Tagged with {{tag_name}}</h2>
+<h2>Here are Photos you may like!</h2>
     <u1>
         {% for photo in photos %}
         <li>{{photo[2]}}<br>
             <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
-             <li>
-             <li><form method = "post" action = "{{url_for('likephoto', pid =photo[1])}}">
+            <li><form method = "post" action = "{{url_for('likephoto', pid =photo[1])}}">
          <input type = "submit" name = "Like" value = "Like">
          </form></li>
-              <li><a href = '/viewlikes/{{photo[1]}}'> View Likes </a></li>
+             <li><a href = '/viewlikes/{{photo[1]}}'> View Likes </a></li>
+            <li>
             <form action="{{url_for('commentPhoto', pid=photo[1])}}" method="post">
             <h1> Leave a comment! </h1>
                 <label for="comment">Enter Comment:</label>
@@ -16,10 +20,13 @@
                 <input type="submit" />
             </form>
             </li>
-        <li><a href='/viewComments/{{photo[1]}}'>View Comments</a></li>
-             
-
+        <li><a href='/viewComments'>View Comments</a></li>
         {% endfor %}
     </u1>
 {% endif %}
+
+
+
+
+
 <li><a href='/'>Home</a></li>

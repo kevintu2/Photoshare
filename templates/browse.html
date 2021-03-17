@@ -5,6 +5,10 @@
 
         <li>{{photo[2]}}<br>
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <li><form method = "post" action = "{{url_for('likephoto', pid =photo[1])}}">
+         <input type = "submit" name = "Like" value = "Like">
+         </form></li>
+         <li><a href = '/viewlikes/{{photo[1]}}'> View Likes </a></li>
          <li>
             <form action="{{url_for('commentPhoto', pid=photo[1])}}" method="post">
             <h1> Leave a comment! </h1>
@@ -24,6 +28,10 @@
         {% for photo in albums %}
         <li>{{photo[2]}}<br>
             <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+           <li><form method = "post" action = "{{url_for('likephoto', pid =photo[1])}}">
+         <input type = "submit" name = "Like" value = "Like">
+         </form></li>
+             <li><a href = '/viewlikes/{{photo[1]}}'> View Likes </a></li>
              <li>
             <form action="{{url_for('commentPhoto', pid=photo[1])}}" method="post">
             <h1> Leave a comment! </h1>

@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '5Xbmep7olqrLuc!'
+app.config['MYSQL_DATABASE_PASSWORD'] = '130Barnes'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -572,6 +572,187 @@ def getPhotoById(photo_id):
 	cursor = conn.cursor()
 	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE photo_id = '{0}'".format(photo_id))
 	return cursor.fetchall()
+
+@app.route('/likephoto', methods = ['POST'])
+@flask_login.login_required
+def likephoto():
+	try:
+		photo_id = request.args.get('pid')
+	except:
+		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
+		return flask.redirect(flask.url_for('hello', message = 'error'))
+	
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Likes WHERE photo_id = '{0}'".format(photo_id))
+	liked_users = cursor.fetchall()
+	for x in liked_users:
+		if user_id == x[0]:
+			return render_template('hello.html', message = 'You can not like a photo twice')
+		else:
+			continue
+	cursor = conn.cursor()
+	cursor.execute("INSERT INTO Likes (photo_id, user_id) VALUES ('{0}' , '{1}')".format(photo_id,user_id))
+	conn.commit()
+	return render_template('hello.html', message = 'You liked the photo!')
+@app.route('/viewlikes/<photo_id>', methods = ['GET'])
+def viewlikes(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Likes WHERE photo_id = '{0}'".format(photo_id))
+	liked_users = cursor.fetchall()
+	liked_users_list = []
+	for x in liked_users:
+		temp = list(x)
+		temp.append(getEmailFromId(x[0]))
+		res = tuple(temp)
+		liked_users_list.append(res)
+	return render_template('viewlikes.html', message = 'These are Users who Liked the Photo', userlist = liked_users_list, like_count = len(liked_users))
+
+def getEmailFromId(user_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT email FROM Users WHERE user_id = '{0}'".format(user_id))
+	return cursor.fetchone()[0]
+
+@app.route('/searchByComment', methods = ['GET'])
+def searchByComment():
+	return render_template('searchByComment.html')
+
+@app.route('/searchCommentName', methods = ['POST'])
+def searchCommentName():
+	try:
+		text_comment = request.form.get('text_comment')
+		
+	except:
+		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
+		return flask.redirect(flask.url_for('searchByComment'))
+	cursor = conn.cursor()
+	cursor.execute("SELECT COUNT(*), user_id FROM Comments WHERE text = '{0}' GROUP BY user_id ORDER BY COUNT(*) DESC".format(text_comment))
+	userlist = cursor.fetchall()
+	userlistFinal = []
+	for x in userlist:
+		temp = list(x)
+		temp.append(getEmailFromId(x[1]))
+		res = tuple(temp)
+		userlistFinal.append(res)
+
+	return render_template('searchByComment.html', userlist = userlistFinal)
+
+@app.route('/friendRecs', methods = ['GET'])
+def friendRecs():
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id2 FROM Friends WHERE user_id1 = '{0}'".format(getUserIdFromEmail(flask_login.current_user.id)))
+	current_friendlist = cursor.fetchall()
+	masterList = []
+	for x in current_friendlist:
+		cursor = conn.cursor()
+		cursor.execute("SELECT user_id2 FROM Friends WHERE user_id1 = '{0}'".format(x[0])) #gets each of your friend's friendlist
+		friendlist = cursor.fetchall()
+		masterList.append(friendlist)
+	mydict = {}
+	for i in range(len(masterList)):
+		for j in range(len(masterList[i])):
+			name = masterList[i][j][0]
+			if name in mydict:
+				mydict.update({name:(mydict.get(masterList[i][j][0]) + 1)})
+			else:
+				mydict[name] = 1
+	mutual = []
+	for key in mydict:
+		if mydict.get(key) >= 2:
+			mutual.append([key,mydict.get(key)])
+	mutual.sort(key=myFunc)
+	mutual.reverse()
+	for x in mutual:
+		if((x[0],) in current_friendlist):
+			mutual.remove(x)
+	for x in mutual:
+		x[0] = getEmailFromId(x[0])
+	return render_template('friendRecs.html', mutual_list = mutual, message = 'Here are your friend recommendations')
+
+	
+def myFunc(tuple):
+	return tuple[1]
+	
+def getPopular(user_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT tag_id FROM Tagged AS T, Photos AS P WHERE T.photo_id = P.photo_id AND P.user_id = '{0}' GROUP BY T.tag_id ORDER BY COUNT(P.photo_id) DESC LIMIT 5".format(user_id))
+	return cursor.fetchall()
+
+def getPhotoswithTag(photo_id, name):
+	cursor = conn.cursor()
+	cursor.execute("SELECT P.photo_id FROM Photos AS P, Tagged AS T WHERE T.photo_id = '{0}' AND T.tag_id ='{1}' AND T.photo_id = P.photo_id".format(photo_id, getTagId(name)))
+	return cursor.fetchall()
+
+
+
+@app.route('/photoRec', methods = ['GET'])
+def photoRec():
+	tags = getPopular(getUserIdFromEmail(flask_login.current_user.id))
+	tag_list = []
+	photo_list = getPhotos()
+	mydict = {}
+	for x in tags:
+		temp = getTagName(x[0])
+		tag_list.append(temp)
+	for x in photo_list:
+		for y in tag_list:
+			recList = getPhotoswithTag(x[1],y)
+			for photo in recList:
+				if(photo[0] in mydict):
+					mydict.update({photo[0]: (mydict[photo[0]] + 1)})
+				else:
+					mydict[photo[0]] = 1
+	reclistfinal = sorted(mydict, key=mydict.get, reverse=True)
+	listphoto = ()
+	for x in reclistfinal:
+		cursor = conn.cursor()
+		cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE photo_id = '{0}'".format(x))
+		listphoto+=(cursor.fetchall())
+	print(listphoto)
+	return render_template('photoRec.html', message = 'You may also like these photos', photos = listphoto, base64=base64)
+
+def getScore():
+	cursor = conn.cursor()
+	cursor.execute("SELECT C.user_id, COUNT(user_id) FROM Comments AS C GROUP BY C.user_id")
+	scores = []
+	scorecomments = cursor.fetchall()
+	for x in scorecomments:
+		scores.append((x[0], x[1]))
+	cursor = conn.cursor()
+	cursor.execute("SELECT P.user_id, COUNT(user_id) FROM Photos AS P GROUP BY P.user_id")
+	scorephotos = cursor.fetchall()
+	finalscore = {}
+	for x in scorephotos:
+		if getEmailFromId(x[0]) not in finalscore:
+			finalscore[getEmailFromId(x[0])] = x[1]
+		else:
+			finalscore[getEmailFromId(x[0])] += x[1]
+
+	for x in scorecomments:
+		if x[0] == None:
+			continue
+		elif getEmailFromId(x[0]) not in finalscore:
+			finalscore[getEmailFromId(x[0])] = x[1]
+		else:
+			finalscore[getEmailFromId(x[0])] += x[1]
+
+	return finalscore
+
+@app.route('/getRanks', methods = ['GET'])
+def getRanks():
+	mydict = getScore()
+	userlisttemp = sorted(mydict, key=mydict.get, reverse=True)
+	userlist=[]
+	for i in userlisttemp:
+		userlist.append((i,mydict[i]))
+	
+	if(len(userlist) <= 10):
+		return render_template('getRanks.html', message= 'Here are the rankings', ranked = userlist)
+	else:
+		newranks = []
+		for x in range(10):
+			newranks.append(userlist[x])
+		return render_template('getRanks.html', message = 'Here are the rankings', ranked = newranks)
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run

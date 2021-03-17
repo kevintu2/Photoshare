@@ -1,0 +1,19 @@
+<head>
+  <title>Search Comments</title>
+</head>
+
+<body>
+  {% if userlist %}
+  {%for user in userlist%}
+    <h4>{{user[2]}} Has made this comment {{user[0]}} times</h4>
+    {%endfor%}
+  {% endif %}
+
+<form action="{{url_for('searchCommentName')}}" method="post">
+  <h1> Search Comments! </h1>
+    <label for="text_comment">Enter Comment:</label>
+    <input type="search" name= "text_comment" /><br />
+    <input type="submit" />
+  </form>
+
+  <li><a href='/'>Home</a></li>

@@ -7,10 +7,13 @@
 {% if name %}
   <h1>Hello {{ name }}!</h1>
   <li><a href='/add'>Add Friend</a> </li>
-  <li><a href='/search'>Search</a> </li>
+  <li><a href='/search'>Search For Friends</a> </li>
   <li><a href='/flist'>See My Friends</a> </li>
   <li><a href='/album'>Create Album</a> </li>
   <li><a href='/browseMyTags'>See My Tags</a></li>
+  <li><a href='/friendRecs'>See My Friend Recs</a></li>
+  <li><a href='/photoRec'>Photos you may like</a></li>
+
 {% endif %}
 
 {% if friends %}
@@ -34,6 +37,10 @@
          </form>
         
         </li>
+        <li><form method = "post" action = "{{url_for('likephoto', pid =photo[1])}}">
+         <input type = "submit" name = "Like" value = "Like">
+         </form></li>
+        <li><a href = '/viewlikes/{{photo[1]}}'> View Likes </a></li>
         <li><a href='/viewComments/{{photo[1]}}'>View Comments</a></li>
     {% endfor %}
     </ul>
@@ -65,7 +72,9 @@
 <li><a href='/browsealbum'>Browse Albums</a> </li>
 <li><a href='/searchTags'>Search Photos By Tags</a></li>
 <li><a href='/popularTags'>See Top 3 Tags</a></li>
+<li><a href='/getRanks'>See Top 10 Users</a></li>
 <li><a href='/browseAllTags'>See All Tags</a></li>
+<li><a href='/searchByComment'>Search Comments</a></li>
 <li><a href='/logout'>Logout</a></li>
 <li><a href='/'>Home</a></li>
 </ul>
