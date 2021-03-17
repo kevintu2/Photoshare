@@ -24,30 +24,31 @@ CREATE TABLE Users(
 );
 
 CREATE TABLE Albums(
- albums_id INTEGER,
+ albums_id INTEGER NOT NULL AUTO_INCREMENT,
  name VARCHAR(100),
  date DATE,
  user_id INTEGER NOT NULL,
  PRIMARY KEY (albums_id),
  FOREIGN KEY (user_id)
  REFERENCES Users(user_id)
+
 );
 
 CREATE TABLE Tags(
- tag_id INTEGER,
+ tag_id INTEGER AUTO_INCREMENT,
  name VARCHAR(100),
  PRIMARY KEY (tag_id)
 );
 
 CREATE TABLE Photos(
- photo_id INTEGER,
+ photo_id INTEGER AUTO_INCREMENT,
  caption VARCHAR(100),
  data LONGBLOB,
  albums_id INTEGER NOT NULL,
-user_id INTEGER NOT NULL,
- PRIMARY KEY (photo_id),
- FOREIGN KEY (albums_id) REFERENCES Albums (albums_id),
-FOREIGN KEY (user_id) REFERENCES Users (user_id)
+ user_id INTEGER NOT NULL,
+ PRIMARY KEY (photo_id, albums_id),
+ FOREIGN KEY (albums_id) REFERENCES Albums (albums_id) ON DELETE CASCADE,
+ FOREIGN KEY (user_id) REFERENCES Users (user_id)
 );
 
 CREATE TABLE Tagged(
@@ -55,14 +56,14 @@ CREATE TABLE Tagged(
  tag_id INTEGER,
  PRIMARY KEY (photo_id, tag_id),
  FOREIGN KEY(photo_id)
- REFERENCES Photos (photo_id),
+ REFERENCES Photos (photo_id) ON DELETE CASCADE,
  FOREIGN KEY(tag_id)
  REFERENCES Tags (tag_id)
 );
 
 CREATE TABLE Comments(
- comment_id INTEGER,
- user_id INTEGER NOT NULL,
+ comment_id INTEGER AUTO_INCREMENT,
+ user_id INTEGER DEFAULT NULL,
  photo_id INTEGER NOT NULL,
  text VARCHAR (100),
  date DATE,
