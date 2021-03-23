@@ -1,3 +1,13 @@
+Kevin Tu and James Chen
+CS460
+Prof. Kollios
+March 16th, 2021
+
+Final Report for Photoshare
+
+
+Schema:
+
 CREATE DATABASE IF NOT EXISTS photoshare;
 USE photoshare;
 
@@ -83,3 +93,25 @@ CREATE TABLE Likes(
  FOREIGN KEY (user_id)
  REFERENCES Users (user_id)
 );
+
+
+
+Constraints and assumptions:
+We assume that the user will fill in the date field in the register form with the format of yyyy-mm-dd
+We assume that when you add a friend, the friend does not need to add you back for the friendship to be valid. Meaning that the user will have the added friend in their friends list, but the added friend will not have it in their friends list. They are still friends though.
+Users are unable to add to albums that are not their own albums. They can only add to the ones they created.
+We assume that when inputting tags the user will format the tags by separating with a whitespace. 
+If an anonymous user comments on a photo, the comment will have a user_id of NULL
+When a user uploads a photo, they must have created at least one album beforehand in order to upload the photo.
+We assume that a user can not like a photo twice.
+We assume that any user can not upload the same photo with the same caption, album into the database if it already exists in the database. Even when they have not uploaded that photo yet because that would be stealing content!
+We assume that users are able to create an album with the same name that another user has made.
+We assume users can not delete tags when you create them
+We assume that when a user deletes an album all the photos will delete too
+We assume that when a user deletes all photos from an album the album still exists
+We assume that when you delete a photo the tag you tagged the photo with still exists
+Only the user that uploaded the photo can delete the photo and album
+We assume that you can not delete comments
+We assume that you can not unlike a photo
+
+
