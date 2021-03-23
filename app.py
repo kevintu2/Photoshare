@@ -626,7 +626,7 @@ def searchCommentName():
 		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
 		return flask.redirect(flask.url_for('searchByComment'))
 	cursor = conn.cursor()
-	cursor.execute("SELECT COUNT(*), user_id FROM Comments WHERE text = '{0}' GROUP BY user_id ORDER BY COUNT(*) DESC".format(text_comment))
+	cursor.execute("SELECT COUNT(*), user_id FROM Comments WHERE text = '{0}' GROUP BY user_id ORDER BY COUNT(*) DESC".format(text_comment))# count the rows of user after 
 	userlist = cursor.fetchall()
 	userlistFinal = []
 	for x in userlist:
@@ -675,7 +675,7 @@ def myFunc(tuple):
 	
 def getPopular(user_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT tag_id FROM Tagged AS T, Photos AS P WHERE T.photo_id = P.photo_id AND P.user_id = '{0}' GROUP BY T.tag_id ORDER BY COUNT(P.photo_id) DESC LIMIT 5".format(user_id))
+	cursor.execute("SELECT tag_id FROM Tagged AS T, Photos AS P WHERE T.photo_id = P.photo_id AND P.user_id = '{0}' GROUP BY T.tag_id ORDER BY COUNT(P.photo_id) DESC LIMIT 5".format(user_id)) #grouping tags with count of photos per tag
 	return cursor.fetchall()
 
 def getPhotoswithTag(photo_id, name):
